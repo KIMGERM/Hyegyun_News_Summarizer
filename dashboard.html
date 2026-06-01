@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hyegyun's Tech News Summarizer</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: #020617; }
+        ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: #334155; }
+    </style>
+</head>
+<body class="h-screen w-screen bg-[#0b0f19] text-slate-300 font-sans overflow-hidden flex flex-col">
+
+    <header class="h-16 px-6 border-b border-slate-800/80 bg-[#0d1321] flex items-center justify-between shrink-0 shadow-lg">
+        <div class="flex items-center space-x-3">
+            <div class="bg-blue-600 p-2 rounded-lg text-white shadow-md shadow-blue-600/20">
+                <i data-lucide="sparkles" class="h-5 w-5"></i>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="text-white font-extrabold text-base tracking-tight">Hyegyun's Tech News Summarizer</h1>
+                    <span class="bg-blue-500/10 text-blue-400 border border-blue-500/20 text-[10px] font-bold px-1.5 py-0.5 rounded font-mono">v3.5 Live</span>
+                </div>
+                <p class="text-[10px] text-slate-500 font-mono uppercase tracking-wider">REALTIME TECH SUMMARY ENGINE</p>
+            </div>
+        </div>
+        <div class="flex items-center space-x-6">
+            <div class="text-right font-mono text-xs text-slate-400 hidden sm:block">
+                <p class="text-[9px] text-slate-500 font-bold uppercase">UT TEMPORAL STANDARD</p>
+                <p id="utc-clock" class="text-slate-300">2026-06-01 06:20:17 UTC</p>
+            </div>
+            <div class="flex items-center gap-2 bg-blue-500/10 border border-blue-500/20 px-3 py-1.5 rounded-full text-[11px] font-medium text-blue-400">
+                <span class="h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse"></span> Pipeline Connected
+            </div>
+        </div>
+    </header>
+
+    <div class="bg-slate-900/40 border-b border-slate-800/60 px-6 py-2 flex items-center justify-between text-xs shrink-0 font-mono">
+        <div class="flex items-center gap-2 text-blue-400">
+            <i data-lucide="check-circle" class="h-3.5 w-3.5"></i>
+            <span><strong>[시스템 안내]</strong> 제미나이 엔진 및 백엔드 파이프라인의 글로벌 인증 동기화가 활성화되었습니다.</span>
+        </div>
+        <div class="flex items-center gap-4 text-slate-500">
+            <span>실시간 테크크런치 분석 피드가 화면에 렌더링됩니다.</span>
+            <button onclick="fetchArticles()" class="bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 text-blue-400 px-2.5 py-1 rounded flex items-center gap-1 font-sans transition">
+                <i data-lucide="refresh-cw" class="h-3 w-3"></i> 데이터 수동 갱신
+            </button>
+        </div>
+    </div>
+
+    <div class="flex-1 flex overflow-hidden">
+        
+        <aside class="w-72 shrink-0 bg-[#0d1321] border-r border-slate-800/80 p-5 flex flex-col justify-between overflow-y-auto">
+            <div class="space-y-5">
+                <div>
+                    <h3 class="text-xs font-bold tracking-wider text-slate-400 uppercase mb-1">관심 기술 주제 필터링</h3>
+                    <p class="text-[11px] text-slate-500 leading-normal">필터링을 활성화하려면 다중 선택해 보세요. 제미나이가 실시간 매칭 뉴스를 선제 집단 수집합니다.</p>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-2">
+                    <button onclick="toggleAllCategories(true)" class="bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 rounded-md py-1.5 text-[11px] font-medium text-slate-300 transition">전체 선택</button>
+                    <button onclick="toggleAllCategories(false)" class="bg-slate-800/50 hover:bg-slate-800 border border-slate-700/60 rounded-md py-1.5 text-[11px] font-medium text-slate-400 transition">필터 초기화</button>
+                </div>
+
+                <div class="space-y-1.5 text-xs" id="category-filter-list">
+                    </div>
+            </div>
+            
+            <div class="pt-4 border-t border-slate-800 text-[11px] text-slate-500 font-mono">
+                ENGINE PIPELINE: <span class="text-emerald-500 font-bold">READY</span>
+            </div>
+        </aside>
+
+        <section class="w-[450px] shrink-0 bg-[#090d16] border-r border-slate-800/80 flex flex-col overflow-hidden">
+            <div class="p-4 border-b border-slate-800/60 bg-[#0d1321]/40">
+                <div class="relative">
+                    <input type="text" id="search-input" oninput="handleSearch(this.value)" placeholder="키워드 검색 (태그, 본문)..." class="w-full bg-[#05070f] border border-slate-800 rounded-lg pl-9 pr-4 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:border-blue-500/80 focus:ring-1 focus:ring-blue-500/30 transition" />
+                    <i data-lucide="search" class="absolute left-3 top-2.5 h-4 w-4 text-slate-600"></i>
+                </div>
+                <div class="flex items-center justify-between mt-3 text-[10px] text-slate-500 font-mono font-bold uppercase">
+                    <div>ACTIVE CATEGORIES: <span class="text-blue-400" id="active-cat-count">0</span></div>
+                    <div class="flex gap-2 text-blue-400/80"><span class="flex items-center gap-0.5">▲ 실시간 크롤링</span><span>엔진 가동 중</span></div>
+                </div>
+            </div>
+            
+            <div id="news-feed" class="flex-1 overflow-y-auto p-4 space-y-3 bg-[#080b12]">
+                </div>
+        </section>
+
+        <section class="flex-1 bg-[#06080f] overflow-y-auto p-8" id="report-panel">
+            <div class="h-full flex items-center justify-center text-xs text-slate-600 font-mono uppercase">
+                Select an article to view depth analysis report.
+            </div>
+        </section>
+    </div>
+
+    <script>
+        const MASTER_CATEGORIES = [
+            { id: 'ai', label: '인공지능 (AI)', icon: '🧠' },
+            { id: 'semiconductor', label: '반도체 신기술', icon: '⚡' },
+            { id: 'datacenter', label: '데이터센터 / 클라우드', icon: '🗄️' },
+            { id: 'blockchain', label: '블록체인 / Web3', icon: '⛓️' },
+            { id: 'security', label: '사이버 보안', icon: '🛡️' },
+            { id: 'space', label: '우주 탐사', icon: '🚀' },
+            { id: 'computing', label: '차세대 컴퓨팅', icon: '🌌' }
+        ];
+
+        let articlesData = [];
+        let activeCategories = MASTER_CATEGORIES.map(c => c.id);
+        let searchQuery = '';
+        let selectedIdx = 0;
+
+        function renderCategoryFilters() {
+            const container = document.getElementById('category-filter-list');
+            container.innerHTML = MASTER_CATEGORIES.map(cat => {
+                const isChecked = activeCategories.includes(cat.id);
+                return `
+                    <label class="flex items-center justify-between p-3 rounded-xl cursor-pointer transition select-none ${isChecked ? 'bg-blue-950/20 border border-blue-500/40 text-white font-semibold' : 'bg-slate-900/40 border border-slate-800/60 text-slate-400 hover:bg-slate-900/60'}" style="margin-bottom: 6px;">
+                        <div class="flex items-center space-x-3 text-xs">
+                            <span class="text-sm">${cat.icon}</span>
+                            <span>${cat.label}</span>
+                        </div>
+                        <input type="checkbox" value="${cat.id}" ${isChecked ? 'checked' : ''} onchange="handleCategoryToggle(this)" class="w-4 h-4 rounded border-slate-800 bg-slate-950 text-blue-600 focus:ring-0 focus:ring-offset-0 transition accent-blue-500" />
+                    </label>
+                `;
+            }).join('');
+            document.getElementById('active-cat-count').innerText = activeCategories.length;
+        }
+
+        function handleCategoryToggle(checkbox) {
+            const catId = checkbox.value;
+            if (checkbox.checked) {
+                if (!activeCategories.includes(catId)) activeCategories.push(catId);
+            } else {
+                activeCategories = activeCategories.filter(id => id !== catId);
+            }
+            renderCategoryFilters();
+            applyFiltersAndRender();
+        }
+
+        function toggleAllCategories(isSelected) {
+            activeCategories = isSelected ? MASTER_CATEGORIES.map(c => c.id) : [];
+            renderCategoryFilters();
+            applyFiltersAndRender();
+        }
+
+        function handleSearch(val) {
+            searchQuery = val.toLowerCase().trim();
+            applyFiltersAndRender();
+        }
+
+        async function fetchArticles() {
+            const feedContainer = document.getElementById('news-feed');
+            feedContainer.innerHTML = `
+                <div class="flex flex-col items-center justify-center py-20 text-xs text-slate-500 space-y-2">
+                    <i data-lucide="loader-2" class="h-5 w-5 animate-spin text-blue-500"></i>
+                    <span>서버 파이프라인에서 뉴스 수집 및 AI 요약 분석 중...</span>
+                </div>
+            `;
+            lucide.createIcons();
+
+            try {
+                const res = await fetch('http://127.0.0.1:8000/api/latest-tech-news');
+                if (!res.ok) throw new Error();
+                const rawData = await res.json();
+                
+                articlesData = rawData.map((item, idx) => {
+                    let cat = 'ai';
+                    const titleLower = item.title.toLowerCase();
+                    if (titleLower.includes('chip') || titleLower.includes('semiconductor') || titleLower.includes('nvidia') || titleLower.includes('intel') || titleLower.includes('rubin')) cat = 'semiconductor';
+                    else if (titleLower.includes('cloud') || titleLower.includes('server') || titleLower.includes('google') || titleLower.includes('datacenter') || titleLower.includes('apple')) cat = 'datacenter';
+                    else if (titleLower.includes('crypto') || titleLower.includes('web3') || titleLower.includes('blockchain') || titleLower.includes('bitcoin')) cat = 'blockchain';
+                    else if (titleLower.includes('security') || titleLower.includes('hack') || titleLower.includes('cyber')) cat = 'security';
+                    else if (titleLower.includes('space') || titleLower.includes('rocket') || titleLower.includes('nasa')) cat = 'space';
+                    else if (titleLower.includes('quantum') || titleLower.includes('computing')) cat = 'computing';
+
+                    return {
+                        id: `tech-${idx}`,
+                        title: item.title,
+                        source: 'TechCrunch',
+                        category: cat,
+                        url: item.url,
+                        summaryPoints: item.summary && item.summary.length > 0 ? item.summary : ["요약 내용을 파싱하는 중입니다."],
+                        keywords: item.keywords && item.keywords.length > 0 ? item.keywords : ["Tech"],
+                        opportunity: item.opportunity || '비즈니스 기회 분석 완료',
+                        risk: item.risk || '거시적 리스크 측정 완료'
+                    };
+                });
+
+                applyFiltersAndRender();
+
+            } catch (e) {
+                feedContainer.innerHTML = `
+                    <div class="text-center py-20 text-xs text-amber-500 flex flex-col items-center gap-2 bg-slate-900/20 rounded-xl border border-slate-800/50 p-4">
+                        <i data-lucide="alert-triangle" class="h-5 w-5"></i>
+                        <span>파이썬 백엔드 서버와 실시간 통신망을 찾을 수 없습니다.<br><span class="text-[10px] text-slate-500 font-mono mt-1 block">Endpoint: http://127.0.0.1:8000</span></span>
+                    </div>
+                `;
+                lucide.createIcons();
+            }
+        }
+
+        let displayList = [];
+        function applyFiltersAndRender() {
+            displayList = articlesData.filter(article => {
+                const matchesCategory = activeCategories.includes(article.category);
+                const matchesSearch = article.title.toLowerCase().includes(searchQuery) || 
+                                      article.keywords.some(k => k.toLowerCase().includes(searchQuery));
+                return matchesCategory && matchesSearch;
+            });
+
+            const feedContainer = document.getElementById('news-feed');
+            if (displayList.length === 0) {
+                feedContainer.innerHTML = '<div class="text-center py-16 text-xs text-slate-500 font-mono">NO ARTICLES MATCHING FILTER CRITERIA.</div>';
+                document.getElementById('report-panel').innerHTML = '<div class="text-center py-20 text-xs text-slate-600 font-mono uppercase">No Article Selected</div>';
+                return;
+            }
+
+            feedContainer.innerHTML = displayList.map((article, idx) => {
+                const catObj = MASTER_CATEGORIES.find(c => c.id === article.category);
+                const catLabel = catObj ? catObj.label : '일반 테크';
+                const isSelected = selectedIdx === idx;
+
+                return `
+                    <div onclick="selectArticle(${idx})" class="p-4 rounded-xl border text-left cursor-pointer transition flex flex-col ${isSelected ? 'bg-[#0f172a]/70 border-blue-500 shadow-lg shadow-blue-500/5 ring-1 ring-blue-500/20' : 'bg-[#0c1220] border-slate-800/80 hover:border-slate-700'}">
+                        <div class="flex items-center justify-between text-[11px] mb-2 font-mono">
+                            <div class="flex items-center gap-2">
+                                <span class="bg-blue-600 text-white font-extrabold text-[9px] px-1.5 py-0.5 rounded uppercase tracking-wide">${article.source}</span>
+                                <span class="text-slate-500">•</span>
+                                <span class="text-slate-400 font-sans">${catLabel}</span>
+                            </div>
+                            <span class="text-slate-500 flex items-center gap-1"><i data-lucide="calendar" class="h-3 w-3"></i>Realtime</span>
+                        </div>
+                        <h4 class="text-sm font-bold text-white leading-snug mb-3 tracking-tight line-clamp-2">${article.title}</h4>
+                        <p class="text-xs text-slate-400 font-sans leading-normal mb-3 line-clamp-2 opacity-80 pl-2 border-l border-blue-500/30">
+                            ${article.summaryPoints[0]}
+                        </p>
+                        <div class="flex items-center justify-between mt-auto pt-2 border-t border-slate-800/40">
+                            <div class="flex flex-wrap gap-1">
+                                ${article.keywords.slice(0, 3).map(kw => `<span class="text-[10px] bg-[#05070c] px-2 py-0.5 rounded-full text-slate-500">#${kw}</span>`).join('')}
+                            </div>
+                            <span class="text-[10px] text-blue-400 font-bold flex items-center gap-0.5 hover:underline">상세 분석 <i data-lucide="arrow-up-right" class="h-3 w-3"></i></span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+
+            lucide.createIcons();
+            renderReportPanel(selectedIdx);
+        }
+
+        function selectArticle(idx) {
+            selectedIdx = idx;
+            applyFiltersAndRender();
+        }
+
+        function renderReportPanel(idx) {
+            const article = displayList[idx];
+            const panel = document.getElementById('report-panel');
+            if (!article) return;
+
+            panel.innerHTML = `
+                <div class="max-w-3xl mx-auto space-y-7">
+                    <div class="flex items-center justify-between text-xs font-mono text-slate-500 border-b border-slate-800/80 pb-4">
+                        <div class="flex items-center gap-2">
+                            <span>SOURCE: <strong class="text-slate-300 uppercase">${article.source}</strong></span>
+                            <span>•</span>
+                            <span>STATUS: <strong class="text-slate-300">ANALYSIS COMPLETE</strong></span>
+                        </div>
+                        <a href="${article.url}" target="_blank" class="px-3 py-1 bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 rounded-lg text-xs flex items-center gap-1.5 transition">
+                            <span>원문 전체 확인</span><i data-lucide="external-link" class="h-3.5 w-3.5"></i>
+                        </a>
+                    </div>
+
+                    <h2 class="text-2xl font-black text-white leading-tight tracking-tight">${article.title}</h2>
+                    
+                    <div class="bg-[#0b111e] border border-slate-800/80 rounded-2xl p-6 shadow-inner space-y-4">
+                        <h3 class="text-xs font-bold text-blue-400 tracking-wider uppercase flex items-center gap-2">
+                            <i data-lucide="check-circle" class="h-4 w-4 text-blue-500"></i> 실시간 개조식 핵심 브리핑 (3줄 요약)
+                        </h3>
+                        <div class="space-y-2.5">
+                            ${article.summaryPoints.map((pt, i) => `
+                                <div class="flex gap-4 items-start text-xs text-slate-200 leading-relaxed bg-[#050810]/60 p-4 rounded-xl border border-slate-900/80">
+                                    <span class="text-blue-500 font-mono font-black text-sm tracking-wider">0${i+1}</span>
+                                    <span class="font-sans">${pt}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div class="bg-[#090f1a]/50 border border-slate-800/60 p-5 rounded-xl space-y-2.5">
+                            <div class="text-emerald-400 text-xs font-bold flex items-center gap-1.5 font-mono">
+                                <span class="px-1.5 py-0.5 bg-emerald-500/10 rounded">OPP</span>
+                                <span>비즈니스 기회 요인</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed font-sans">${article.opportunity}</p>
+                        </div>
+                        <div class="bg-[#090f1a]/50 border border-slate-800/60 p-5 rounded-xl space-y-2.5">
+                            <div class="text-amber-500 text-xs font-bold flex items-center gap-1.5 font-mono">
+                                <span class="px-1.5 py-0.5 bg-amber-500/10 rounded">RISK</span>
+                                <span>과제 및 리스크</span>
+                            </div>
+                            <p class="text-xs text-slate-400 leading-relaxed font-sans">${article.risk}</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2 pt-4 border-t border-slate-800/40">
+                        <h4 class="text-[10px] font-mono font-bold tracking-widest text-slate-500 uppercase">Background Details</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed font-sans">
+                            본 기사는 수집 엔진에 의해 실시간 가공되었습니다. 정보의 주도권 확보 및 리스크 헷지를 위해 제미나이 언어 모델이 거시 지표 환경 변화와 결부하여 도출한 자동 분석 결과 요약본입니다. 관련 도메인의 신기술 아키텍처 연동 흐름은 좌측 카테고리 필터링을 통해 연속 관찰이 가능합니다.
+                        </p>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('utc-clock').innerText = `${now.getUTCFullYear()}-${String(now.getUTCMonth()+1).padStart(2,'0')}-${String(now.getUTCDate()).padStart(2,'0')} ${String(now.getUTCHours()).padStart(2,'0')}:${String(now.getUTCMinutes()).padStart(2,'0')}:${String(now.getUTCSeconds()).padStart(2,'0')} UTC`;
+        }, 1000);
+
+        window.onload = () => {
+            renderCategoryFilters();
+            fetchArticles();
+        };
+    </script>
+</body>
+</html>
